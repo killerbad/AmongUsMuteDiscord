@@ -5,6 +5,7 @@ import (
 	"github.com/automuteus/utils/pkg/task"
 	"github.com/bsm/redislock"
 	"github.com/bwmarrin/discordgo"
+	"github.com/denverquane/amongusdiscord/amongus"
 	"github.com/denverquane/amongusdiscord/storage"
 	"log"
 	"strconv"
@@ -125,30 +126,17 @@ func (bot *Bot) handleTrackedMembers(sess *discordgo.Session, sett *storage.Guil
 
 		tracked := voiceState.ChannelID != "" && dgs.Tracking.ChannelID == voiceState.ChannelID
 
-		auData, found := dgs.AmongUsData.GetByName(userData.InGameName)
+		auData, linked := dgs.AmongUsData.GetByName(userData.InGameName)
 		// only actually tracked if we're in a tracked channel AND linked to a player
-		var isAlive bool
-
-		// only actually tracked if we're in a tracked channel AND linked to a player
-		if !sett.GetMuteSpectator() {
-			tracked = tracked && found
-			isAlive = auData.IsAlive
-		} else {
-			if !found {
-				// we just assume the spectator is dead
-				isAlive = false
-			} else {
-				isAlive = auData.IsAlive
-			}
-		}
-		shouldMute, shouldDeaf := sett.GetVoiceState(isAlive, tracked, dgs.AmongUsData.GetPhase())
+		tracked = tracked && (linked || userData.GetPlayerName() == amongus.SpectatorPlayerName)
+		shouldMute, shouldDeaf := sett.GetVoiceState(auData.IsAlive, tracked, dgs.AmongUsData.GetPhase())
 
 		incorrectMuteDeafenState := shouldMute != userData.ShouldBeMute || shouldDeaf != userData.ShouldBeDeaf
 
 		// only issue a change if the User isn't in the right state already
 		// nicksmatch can only be false if the in-game data is != nil, so the reference to .audata below is safe
 		// check the userdata is linked here to not accidentally undeafen music bots, for example
-		if incorrectMuteDeafenState && (found || sett.GetMuteSpectator()) {
+		if linked && incorrectMuteDeafenState {
 			uid, _ := strconv.ParseUint(userData.User.UserID, 10, 64)
 			userModify := task.UserModify{
 				UserID: uid,
@@ -156,7 +144,7 @@ func (bot *Bot) handleTrackedMembers(sess *discordgo.Session, sett *storage.Guil
 				Deaf:   shouldDeaf,
 			}
 
-			if handlePriority != NoPriority && ((handlePriority == AlivePriority && isAlive) || (handlePriority == DeadPriority && !isAlive)) {
+			if handlePriority != NoPriority && ((handlePriority == AlivePriority && auData.IsAlive) || (handlePriority == DeadPriority && !auData.IsAlive)) {
 				users = append([]task.UserModify{userModify}, users...)
 				priorityRequests++ // counter of how many elements on the front of the arr should be sent first
 			} else {
@@ -195,7 +183,7 @@ func (bot *Bot) handleTrackedMembers(sess *discordgo.Session, sett *storage.Guil
 					Users:   rem,
 				}
 				bot.issueMutesAndRecord(dgs.GuildID, dgs.ConnectCode, req, voiceLock)
-			} else if voiceLock != nil {
+			} else {
 				voiceLock.Release(context.Background())
 			}
 		} else {

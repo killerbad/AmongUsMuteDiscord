@@ -107,17 +107,7 @@ func (redisInterface *RedisInterface) LockVoiceChanges(connectCode string, dur t
 
 // need at least one of these fields to fetch
 func (redisInterface *RedisInterface) GetReadOnlyDiscordGameState(gsr GameStateRequest) *GameState {
-	dgs := redisInterface.getDiscordGameState(gsr)
-	i := 0
-	for dgs == nil {
-		i++
-		if i > 10 {
-			log.Println("RETURNING NIL GAMESTATE FOR READONLY FETCH")
-			return nil
-		}
-		dgs = redisInterface.getDiscordGameState(gsr)
-	}
-	return dgs
+	return redisInterface.getDiscordGameState(gsr)
 }
 
 func (redisInterface *RedisInterface) GetDiscordGameStateAndLock(gsr GameStateRequest) (*redislock.Lock, *GameState) {

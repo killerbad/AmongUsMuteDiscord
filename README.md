@@ -78,6 +78,11 @@ The bot will send you a private message (make sure your Discord settings allow D
 
 If you want to view command usage or see the available options, type `.au` or `.au help` in your Discord channel.
 
+## Galactus
+
+Galactus is a program used to speed up muting and deafening (which is typically constrained by Discord rate-limits). It allows for an arbitrary number of tokens to be provided for faster muting/deafening, but also supports capture-side bots.
+A guide to setup your own capture-side bot can be found [here,](https://youtu.be/jKcEW5qpk8E) and the repo for Galactus is [here.](https://github.com/automuteus/galactus)
+
 ## Commands
 
 The Discord Bot uses the `.au` prefix for any commands by default; if you change your prefix remember to replace `.au` with your custom prefix. If you forget your prefix, you can @mention the bot and it will respond with whatever it's prefix currently is.
@@ -132,7 +137,7 @@ There is a [`docker-compose.yml`](docker-compose.yml) file in this repository th
 
 ### Steps:
 
-- Install [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/) on the machine you will be using to host AutoMuteUs
+- Install Docker and Docker Compose on the machine you will be using to host AutoMuteUs
 - Download the [`docker-compose.yml`](docker-compose.yml) from this repository, and create a `.env` file in the same directory that will contain your Environment Variables. On Linux/UNIX systems you can use `touch .env` to create this file, but a template [`sample.env`](sample.env) is provided in this repository for reference. 
 - Provide your specific Environment Variables in the `.env` file, as relevant to your configuration. Please see the Environment Variables reference further down in this Readme for details, as well as the [`sample.env`](sample.env) provided.
 - Run `docker-compose pull`. This will download the latest built Docker images from Dockerhub that are required to run AutoMuteUs.
@@ -146,22 +151,8 @@ unRAID hosting steps are are not yet updated for v3.0+ of AutoMuteUs, and as suc
 
 Heroku hosting steps are are not yet updated for v3.0+ of AutoMuteUs, and as such is not supported at this time.
 
-## FreeBSD
-
-AutoMuteUs exists in the FreeBSD Ports tree as [`games/automuteus`](https://www.freshports.org/games/automuteus/). Instructions are included in the Port.
-
 ## Old version
 If, for whatever reason, you _really_ want to self host, but also don't want to figure out Docker or use Windows and hate Docker because of it (I don't blame you) you can self host [2.4.3](https://github.com/denverquane/automuteus/releases/tag/2.4.3) instead. **If you are using this method, continue using the newest capture!**
-
-## Development Instructions
-The easiest way to test changes is to use docker-compose, but instead of using a pre-built image, building the automuteus docker image from source. Thankfully, this is easy to do:
-
-1. In the `docker-compose.yml` comment out the line `image: denverquane/amongusdiscord:${AUTOMUTEUS_TAG:?err}` and uncomment the `build .` line.
-2. Make any changes to the code or sql file that you would like.
-3. Use the command `docker-compose build` to build the set of docker images with your change
-4. Start the stack with `docker-compose up`
-
-Just remember that you will need to do a rebuild of the docker images every time you make a change.
 
 ## Environment Variables
 
@@ -186,17 +177,11 @@ Just remember that you will need to do a rebuild of the docker images every time
 - `CAPTURE_TIMEOUT`: How many seconds of no capture events received before the Bot will terminate the associated game/connection. Defaults to 36000 seconds.
 - `REDIS_PASS`: Your Redis database password, if necessary.
 - `AUTOMUTEUS_LISTENING`: What the bot displays it is "Listening to" in the online presence message. Recommend putting your custom command prefix here
-- `AUTOMUTEUS_GLOBAL_PREFIX`: A universal default for the bot's command prefix. The bot will respond to **both** this prefix, and any guild-specific prefixes set in settings.
 
 ### HIGHLY advanced. Probably don't ever touch these!
 
 - `NUM_SHARDS`: Num shards provided to the Discord API.
 - `SHARD_ID`: Shard ID used to identify with the Discord API. Needs to be strictly less than `NUM_SHARDS`
-
-## Galactus
-
-Galactus is a program used to speed up muting and deafening (which is typically constrained by Discord rate-limits). It allows for an arbitrary number of tokens to be provided for faster muting/deafening, but also supports capture-side bots.
-A guide to setup your own capture-side bot can be found [here,](https://youtu.be/jKcEW5qpk8E) and the repo for Galactus is [here.](https://github.com/automuteus/galactus)
 
 # Similar Projects
 

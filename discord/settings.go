@@ -3,9 +3,9 @@ package discord
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/automuteus/utils/pkg/game"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/denverquane/amongusdiscord/game"
 	"github.com/denverquane/amongusdiscord/locale"
 	"github.com/denverquane/amongusdiscord/storage"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -25,6 +25,9 @@ const (
 	UnmuteDead
 	Delays
 	VoiceRules
+	MapVersion
+	MatchSummary
+	AutoRefresh
 	Show
 	Reset
 	NullSetting
@@ -38,6 +41,7 @@ type Setting struct {
 	desc        *i18n.Message
 	args        *i18n.Message
 	aliases     []string
+	premium     bool
 }
 
 var AllSettings = []Setting{
@@ -47,7 +51,7 @@ var AllSettings = []Setting{
 		example:     "commandPrefix !",
 		shortDesc: &i18n.Message{
 			ID:    "settings.AllSettings.Prefix.shortDesc",
-			Other: "Bot prefix",
+			Other: "Bot Prefix",
 		},
 		desc: &i18n.Message{
 			ID:    "settings.AllSettings.Prefix.desc",
@@ -57,7 +61,8 @@ var AllSettings = []Setting{
 			ID:    "settings.AllSettings.Prefix.args",
 			Other: "<prefix>",
 		},
-		aliases: []string{"prefix", "cp"},
+		aliases: []string{"prefix", "pref", "cp"},
+		premium: false,
 	},
 	{
 		settingType: Language,
@@ -65,7 +70,7 @@ var AllSettings = []Setting{
 		example:     "language ru",
 		shortDesc: &i18n.Message{
 			ID:    "settings.AllSettings.Language.shortDesc",
-			Other: "Bot language",
+			Other: "Bot Language",
 		},
 		desc: &i18n.Message{
 			ID:    "settings.AllSettings.Language.desc",
@@ -75,7 +80,8 @@ var AllSettings = []Setting{
 			ID:    "settings.AllSettings.Language.args",
 			Other: "<language> or reload",
 		},
-		aliases: []string{"lang", "l"},
+		aliases: []string{"local", "lang", "l"},
+		premium: false,
 	},
 	{
 		settingType: AdminUserIDs,
@@ -94,11 +100,12 @@ var AllSettings = []Setting{
 			Other: "<User @ mentions>...",
 		},
 		aliases: []string{"admins", "admin", "auid", "aui", "a"},
+		premium: false,
 	},
 	{
 		settingType: RoleIDs,
-		name:        "permissionRoleIDs",
-		example:     "permissionRoleIDs @Bot Admins @Bot Mods",
+		name:        "operatorRoles",
+		example:     "operatorRoles @Bot Admins @Bot Mods",
 		shortDesc: &i18n.Message{
 			ID:    "settings.AllSettings.RoleIDs.shortDesc",
 			Other: "Bot Operators",
@@ -111,7 +118,8 @@ var AllSettings = []Setting{
 			ID:    "settings.AllSettings.RoleIDs.args",
 			Other: "<role @ mentions>...",
 		},
-		aliases: []string{"operators", "roles", "role", "prid", "pri", "r"},
+		aliases: []string{"operators", "operator", "oproles", "roles", "role", "ops", "op"},
+		premium: false,
 	},
 	{
 		settingType: UnmuteDead,
@@ -119,7 +127,7 @@ var AllSettings = []Setting{
 		example:     "unmuteDeadDuringTasks false",
 		shortDesc: &i18n.Message{
 			ID:    "settings.AllSettings.UnmuteDead.shortDesc",
-			Other: "Bot unmutes players on death",
+			Other: "Bot Unmutes Deaths",
 		},
 		desc: &i18n.Message{
 			ID:    "settings.AllSettings.UnmuteDead.desc",
@@ -129,7 +137,8 @@ var AllSettings = []Setting{
 			ID:    "settings.AllSettings.UnmuteDead.args",
 			Other: "<true/false>",
 		},
-		aliases: []string{"unmute", "uddt"},
+		aliases: []string{"unmutedead", "unmute", "uddt", "ud"},
+		premium: false,
 	},
 	{
 		settingType: Delays,
@@ -137,7 +146,7 @@ var AllSettings = []Setting{
 		example:     "delays lobby tasks 5",
 		shortDesc: &i18n.Message{
 			ID:    "settings.AllSettings.Delays.shortDesc",
-			Other: "Delays between stages",
+			Other: "Delays Between Stages",
 		},
 		desc: &i18n.Message{
 			ID:    "settings.AllSettings.Delays.desc",
@@ -148,6 +157,7 @@ var AllSettings = []Setting{
 			Other: "<start phase> <end phase> <delay>",
 		},
 		aliases: []string{"delays", "d"},
+		premium: false,
 	},
 	{
 		settingType: VoiceRules,
@@ -155,7 +165,7 @@ var AllSettings = []Setting{
 		example:     "voiceRules mute tasks dead true",
 		shortDesc: &i18n.Message{
 			ID:    "settings.AllSettings.VoiceRules.shortDesc",
-			Other: "Mute/deafen rules",
+			Other: "Mute/deafen Rules",
 		},
 		desc: &i18n.Message{
 			ID:    "settings.AllSettings.VoiceRules.desc",
@@ -166,6 +176,64 @@ var AllSettings = []Setting{
 			Other: "<mute/deaf> <game phase> <dead/alive> <true/false>",
 		},
 		aliases: []string{"voice", "vr"},
+		premium: false,
+	},
+	{
+		settingType: MapVersion,
+		name:        "mapVersion",
+		example:     "mapVersion detailed",
+		shortDesc: &i18n.Message{
+			ID:    "settings.AllSettings.MapVersion.shortDesc",
+			Other: "Map version",
+		},
+		desc: &i18n.Message{
+			ID:    "settings.AllSettings.MapVersion.desc",
+			Other: "Specify the default map version (simple, detailed) used by 'map' command",
+		},
+		args: &i18n.Message{
+			ID:    "settings.AllSettings.MapVersion.args",
+			Other: "<version>",
+		},
+		aliases: []string{"map"},
+		premium: false,
+	},
+	{
+		settingType: MatchSummary,
+		name:        "matchSummary",
+		example:     "matchSummary 5",
+		shortDesc: &i18n.Message{
+			ID:    "settings.AllSettings.MatchSummary.shortDesc",
+			Other: "Match Summary Message",
+		},
+		desc: &i18n.Message{
+			ID:    "settings.AllSettings.MatchSummary.desc",
+			Other: "Specify minutes before the match summary message is deleted. 0 for instant deletion, -1 for never delete",
+		},
+		args: &i18n.Message{
+			ID:    "settings.AllSettings.MatchSummary.args",
+			Other: "<minutes>",
+		},
+		aliases: []string{"matchsumm", "matchsum", "summary", "match", "summ", "sum"},
+		premium: true,
+	},
+	{
+		settingType: AutoRefresh,
+		name:        "autoRefresh",
+		example:     "autoRefresh true",
+		shortDesc: &i18n.Message{
+			ID:    "settings.AllSettings.AutoRefresh.shortDesc",
+			Other: "Autorefresh Status Message",
+		},
+		desc: &i18n.Message{
+			ID:    "settings.AllSettings.AutoRefresh.desc",
+			Other: "Specify if the bot should auto-refresh the status message after a match ends",
+		},
+		args: &i18n.Message{
+			ID:    "settings.AllSettings.AutoRefresh.args",
+			Other: "<true/false>",
+		},
+		aliases: []string{"refresh", "auto", "ar"},
+		premium: true,
 	},
 	{
 		settingType: Show,
@@ -184,6 +252,7 @@ var AllSettings = []Setting{
 			Other: "None",
 		},
 		aliases: []string{"sh", "s"},
+		premium: false,
 	},
 	{
 		settingType: Reset,
@@ -202,17 +271,22 @@ var AllSettings = []Setting{
 			Other: "None",
 		},
 		aliases: []string{},
+		premium: false,
 	},
 }
 
 func ConstructEmbedForSetting(value string, setting Setting, sett *storage.GuildSettings) discordgo.MessageEmbed {
+	title := setting.name
+	if setting.premium {
+		title = "💎 " + title
+	}
 	return discordgo.MessageEmbed{
 		URL:         "",
 		Type:        "",
 		Title:       setting.name,
 		Description: sett.LocalizeMessage(setting.desc),
 		Timestamp:   "",
-		Color:       15844367, //GOLD
+		Color:       15844367, // GOLD
 		Image:       nil,
 		Thumbnail:   nil,
 		Video:       nil,
@@ -270,9 +344,9 @@ func getSetting(arg string) SettingType {
 	return NullSetting
 }
 
-func (bot *Bot) HandleSettingsCommand(s *discordgo.Session, m *discordgo.MessageCreate, sett *storage.GuildSettings, args []string) {
+func (bot *Bot) HandleSettingsCommand(s *discordgo.Session, m *discordgo.MessageCreate, sett *storage.GuildSettings, args []string, prem bool) {
 	if len(args) == 1 {
-		s.ChannelMessageSendEmbed(m.ChannelID, settingResponse(sett.CommandPrefix, AllSettings, sett))
+		s.ChannelMessageSendEmbed(m.ChannelID, settingResponse(sett.CommandPrefix, AllSettings, sett, prem))
 		return
 	}
 	// if command invalid, no need to reapply changes to json file
@@ -282,25 +356,32 @@ func (bot *Bot) HandleSettingsCommand(s *discordgo.Session, m *discordgo.Message
 	switch settType {
 	case Prefix:
 		isValid = CommandPrefixSetting(s, m, sett, args)
-		break
 	case Language:
 		isValid = SettingLanguage(s, m, sett, args)
-		break
 	case AdminUserIDs:
 		isValid = SettingAdminUserIDs(s, m, sett, args)
-		break
 	case RoleIDs:
 		isValid = SettingPermissionRoleIDs(s, m, sett, args)
-		break
 	case UnmuteDead:
 		isValid = SettingUnmuteDeadDuringTasks(s, m, sett, args)
-		break
 	case Delays:
 		isValid = SettingDelays(s, m, sett, args)
-		break
 	case VoiceRules:
 		isValid = SettingVoiceRules(s, m, sett, args)
-		break
+	case MapVersion:
+		isValid = SettingMapVersion(s, m, sett, args)
+	case MatchSummary:
+		if !prem {
+			s.ChannelMessageSend(m.ChannelID, nonPremiumSettingResponse(sett))
+			break
+		}
+		isValid = SettingMatchSummary(s, m, sett, args)
+	case AutoRefresh:
+		if !prem {
+			s.ChannelMessageSend(m.ChannelID, nonPremiumSettingResponse(sett))
+			break
+		}
+		isValid = SettingAutoRefresh(s, m, sett, args)
 	case Show:
 		jBytes, err := json.MarshalIndent(sett, "", "  ")
 		if err != nil {
@@ -308,12 +389,10 @@ func (bot *Bot) HandleSettingsCommand(s *discordgo.Session, m *discordgo.Message
 			return
 		}
 		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("```JSON\n%s\n```", jBytes))
-		return
 	case Reset:
 		sett = storage.MakeGuildSettings()
 		s.ChannelMessageSend(m.ChannelID, "Resetting guild settings to default values")
 		isValid = true
-		break
 	default:
 		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
 			ID:    "settings.HandleSettingsCommand.default",
@@ -469,11 +548,12 @@ func SettingAdminUserIDs(s *discordgo.Session, m *discordgo.MessageCreate, sett 
 		} else {
 			listOfAdmins := ""
 			for index, ID := range adminIDs {
-				if index == 0 {
+				switch {
+				case index == 0:
 					listOfAdmins += "<@" + ID + ">"
-				} else if index == adminCount-1 {
+				case index == adminCount-1:
 					listOfAdmins += " and <@" + ID + ">"
-				} else {
+				default:
 					listOfAdmins += ", <@" + ID + ">"
 				}
 			}
@@ -487,7 +567,6 @@ func SettingAdminUserIDs(s *discordgo.Session, m *discordgo.MessageCreate, sett 
 	var userIDs []string
 
 	if args[2] != "clear" && args[2] != "c" {
-
 		for _, userName := range args[2:] {
 			if userName == "" || userName == " " {
 				// User added a double space by accident, ignore it
@@ -548,11 +627,12 @@ func SettingPermissionRoleIDs(s *discordgo.Session, m *discordgo.MessageCreate, 
 		} else {
 			listOfRoles := ""
 			for index, ID := range oldRoleIDs {
-				if index == 0 {
+				switch {
+				case index == 0:
 					listOfRoles += "<@&" + ID + ">"
-				} else if index == adminRoleCount-1 {
+				case index == adminRoleCount-1:
 					listOfRoles += " and <@&" + ID + ">"
-				} else {
+				default:
 					listOfRoles += ", <@&" + ID + ">"
 				}
 			}
@@ -613,58 +693,6 @@ func SettingPermissionRoleIDs(s *discordgo.Session, m *discordgo.MessageCreate, 
 	return true
 }
 
-//func SettingApplyNicknames(s *discordgo.Session, m *discordgo.MessageCreate, sett *storage.GuildSettings, args []string) bool {
-//	applyNicknames := sett.GetApplyNicknames()
-//	if len(args) == 2 {
-//		current := "false"
-//		if applyNicknames {
-//			current = "true"
-//		}
-//		embed := ConstructEmbedForSetting(current, AllSettings[Nicknames], sett)
-//		s.ChannelMessageSendEmbed(m.ChannelID, &embed)
-//		return false
-//	}
-//
-//	if args[2] == "true" {
-//		if applyNicknames {
-//			s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
-//				ID:    "settings.SettingApplyNicknames.true_applyNicknames",
-//				Other: "It's already true!",
-//			}))
-//		} else {
-//			s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
-//				ID:    "settings.SettingApplyNicknames.true_noApplyNicknames",
-//				Other: "I will now rename the players in the voice chat.",
-//			}))
-//			sett.SetApplyNicknames(true)
-//			return true
-//		}
-//	} else if args[2] == "false" {
-//		if applyNicknames {
-//			s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
-//				ID:    "settings.SettingApplyNicknames.false_applyNicknames",
-//				Other: "I will no longer rename the players in the voice chat.",
-//			}))
-//			sett.SetApplyNicknames(false)
-//			return true
-//		} else {
-//			s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
-//				ID:    "settings.SettingApplyNicknames.false_noApplyNicknames",
-//				Other: "It's already false!",
-//			}))
-//		}
-//	} else {
-//		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
-//			ID:    "settings.SettingApplyNicknames.wrongArg",
-//			Other: "Sorry, `{{.Arg}}` is neither `true` nor `false`.",
-//		},
-//			map[string]interface{}{
-//				"Arg": args[2],
-//			}))
-//	}
-//	return false
-//}
-
 func SettingUnmuteDeadDuringTasks(s *discordgo.Session, m *discordgo.MessageCreate, sett *storage.GuildSettings, args []string) bool {
 	unmuteDead := sett.GetUnmuteDeadDuringTasks()
 	if len(args) == 2 {
@@ -698,12 +726,12 @@ func SettingUnmuteDeadDuringTasks(s *discordgo.Session, m *discordgo.MessageCrea
 			}))
 			sett.SetUnmuteDeadDuringTasks(false)
 			return true
-		} else {
-			s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
-				ID:    "settings.SettingUnmuteDeadDuringTasks.false_noUnmuteDead",
-				Other: "It's already false!",
-			}))
 		}
+		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+			ID:    "settings.SettingUnmuteDeadDuringTasks.false_noUnmuteDead",
+			Other: "It's already false!",
+		}))
+
 	} else {
 		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
 			ID:    "settings.SettingUnmuteDeadDuringTasks.wrongArg",
@@ -816,11 +844,12 @@ func SettingVoiceRules(s *discordgo.Session, m *discordgo.MessageCreate, sett *s
 		return false
 	}
 
-	if args[2] == "deaf" {
-		args[2] = "deafened" // for formatting later on
-	} else if args[2] == "mute" {
-		args[2] = "muted" // same here
-	} else {
+	switch {
+	case args[2] == "deaf":
+		args[2] = "deafened"
+	case args[2] == "mute":
+		args[2] = "muted"
+	default:
 		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
 			ID:    "settings.SettingVoiceRules.neitherMuteDeaf",
 			Other: "`{{.Arg}}` is neither `mute` nor `deaf`!",
@@ -888,11 +917,12 @@ func SettingVoiceRules(s *discordgo.Session, m *discordgo.MessageCreate, sett *s
 	}
 
 	var newValue bool
-	if args[5] == "true" {
+	switch {
+	case args[5] == "true":
 		newValue = true
-	} else if args[5] == "false" {
+	case args[5] == "false":
 		newValue = false
-	} else {
+	default:
 		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
 			ID:    "settings.SettingVoiceRules.neitherTrueFalse",
 			Other: "`{{.Arg}}` is neither `true` or `false`!",
@@ -955,5 +985,127 @@ func SettingVoiceRules(s *discordgo.Session, m *discordgo.MessageCreate, sett *s
 				"PlayerDiscordState": args[2],
 			}))
 	}
+	return true
+}
+
+func SettingMatchSummary(s *discordgo.Session, m *discordgo.MessageCreate, sett *storage.GuildSettings, args []string) bool {
+	if len(args) == 2 {
+		embed := ConstructEmbedForSetting(fmt.Sprintf("%d", sett.GetDeleteGameSummaryMinutes()), AllSettings[MatchSummary], sett)
+		s.ChannelMessageSendEmbed(m.ChannelID, &embed)
+		return false
+	}
+
+	num, err := strconv.ParseInt(args[2], 10, 64)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+			ID:    "settings.SettingMatchSummary.Unrecognized",
+			Other: "{{.Minutes}} is not a valid number. See `{{.CommandPrefix}} settings matchSummary` for usage",
+		},
+			map[string]interface{}{
+				"Minutes":       args[2],
+				"CommandPrefix": sett.CommandPrefix,
+			}))
+		return false
+	}
+	if num > 60 || num < -1 {
+		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+			ID:    "settings.SettingMatchSummary.OutOfRange",
+			Other: "You provided a number too high or too low. Please specify a number between [0-60], or -1 to never delete match summaries",
+		}))
+		return false
+	}
+
+	sett.SetDeleteGameSummaryMinutes(int(num))
+	switch {
+	case num == -1:
+		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+			ID:    "settings.SettingMatchSummary.Success-1",
+			Other: "From now on, I'll never delete match summary messages.",
+		}))
+	case num == 0:
+		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+			ID:    "settings.SettingMatchSummary.Success0",
+			Other: "From now on, I'll delete match summary messages immediately.",
+		}))
+	default:
+		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+			ID:    "settings.SettingMatchSummary.Success",
+			Other: "From now on, I'll delete match summary messages after {{.Minutes}} minutes.",
+		},
+			map[string]interface{}{
+				"Minutes": num,
+			}))
+	}
+
+	return true
+}
+
+func SettingAutoRefresh(s *discordgo.Session, m *discordgo.MessageCreate, sett *storage.GuildSettings, args []string) bool {
+	if len(args) == 2 {
+		embed := ConstructEmbedForSetting(fmt.Sprintf("%v", sett.GetAutoRefresh()), AllSettings[AutoRefresh], sett)
+		s.ChannelMessageSendEmbed(m.ChannelID, &embed)
+		return false
+	}
+
+	val := args[2]
+	if val != "t" && val != "true" && val != "f" && val != "false" {
+		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+			ID:    "settings.SettingAutoRefresh.Unrecognized",
+			Other: "{{.Arg}} is not a true/false value. See `{{.CommandPrefix}} settings autorefresh` for usage",
+		},
+			map[string]interface{}{
+				"Arg":           val,
+				"CommandPrefix": sett.CommandPrefix,
+			}))
+		return false
+	}
+
+	newSet := val == "t" || val == "true"
+	sett.SetAutoRefresh(newSet)
+	if newSet {
+		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+			ID:    "settings.SettingAutoRefresh.True",
+			Other: "From now on, I'll AutoRefresh the game status message",
+		}))
+	} else {
+		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+			ID:    "settings.SettingAutoRefresh.False",
+			Other: "From now on, I will not AutoRefresh the game status message",
+		}))
+	}
+
+	return true
+}
+
+func SettingMapVersion(s *discordgo.Session, m *discordgo.MessageCreate, sett *storage.GuildSettings, args []string) bool {
+	if len(args) == 2 {
+		embed := ConstructEmbedForSetting(fmt.Sprintf("%v", sett.GetMapVersion()), AllSettings[MapVersion], sett)
+		s.ChannelMessageSendEmbed(m.ChannelID, &embed)
+		return false
+	}
+
+	val := strings.ToLower(args[2])
+	valid := map[string]bool{"simple": true, "detailed": true}
+	if !valid[val] {
+		s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+			ID:    "settings.SettingMapVersion.Unrecognized",
+			Other: "{{.Arg}} is not an expected value. See `{{.CommandPrefix}} settings mapversion` for usage",
+		},
+			map[string]interface{}{
+				"Arg":           val,
+				"CommandPrefix": sett.CommandPrefix,
+			}))
+		return false
+	}
+
+	sett.SetMapVersion(val)
+	s.ChannelMessageSend(m.ChannelID, sett.LocalizeMessage(&i18n.Message{
+		ID:    "settings.SettingMapVersion.Success",
+		Other: "From now on, I will display map images as {{.Arg}}",
+	},
+		map[string]interface{}{
+			"Arg": val,
+		}))
+
 	return true
 }

@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/denverquane/amongusdiscord/amongus"
 	"github.com/denverquane/amongusdiscord/storage"
 
 	"github.com/bwmarrin/discordgo"
@@ -28,7 +29,7 @@ const DefaultMaxActiveGames = 150
 const downloadURL = "https://capture.automute.us"
 
 func (bot *Bot) handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// IgnoreSpectator all messages created by the bot itself
+	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
@@ -63,12 +64,6 @@ func (bot *Bot) handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 				"CommandPrefix": prefix,
 			}))
 		return
-	}
-
-	globalPrefix := os.Getenv("AUTOMUTEUS_GLOBAL_PREFIX")
-	if globalPrefix != "" && strings.HasPrefix(contents, globalPrefix) {
-		// if the global matches, then use that for future processing/control flow using the prefix
-		prefix = globalPrefix
 	}
 
 	if strings.HasPrefix(contents, prefix) {
@@ -151,7 +146,7 @@ func (bot *Bot) handleMessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 }
 
 func (bot *Bot) handleReactionGameStartAdd(s *discordgo.Session, m *discordgo.MessageReactionAdd) {
-	// IgnoreSpectator all reactions created by the bot itself
+	// Ignore all reactions created by the bot itself
 	if m.UserID == s.State.User.ID {
 		return
 	}
@@ -317,22 +312,9 @@ func (bot *Bot) handleVoiceStateChange(s *discordgo.Session, m *discordgo.VoiceS
 	tracked := m.ChannelID != "" && dgs.Tracking.ChannelID == m.ChannelID
 
 	auData, found := dgs.AmongUsData.GetByName(userData.InGameName)
-
-	var isAlive bool
-
 	// only actually tracked if we're in a tracked channel AND linked to a player
-	if !sett.GetMuteSpectator() {
-		tracked = tracked && found
-		isAlive = auData.IsAlive
-	} else {
-		if !found {
-			// we just assume the spectator is dead
-			isAlive = false
-		} else {
-			isAlive = auData.IsAlive
-		}
-	}
-	mute, deaf := sett.GetVoiceState(isAlive, tracked, dgs.AmongUsData.GetPhase())
+	tracked = tracked && (found || userData.GetPlayerName() == amongus.SpectatorPlayerName)
+	mute, deaf := sett.GetVoiceState(auData.IsAlive, tracked, dgs.AmongUsData.GetPhase())
 	// check the userdata is linked here to not accidentally undeafen music bots, for example
 	if found && (userData.ShouldBeDeaf != deaf || userData.ShouldBeMute != mute) && (mute != m.Mute || deaf != m.Deaf) {
 		userData.SetShouldBeMuteDeaf(mute, deaf)
@@ -576,7 +558,8 @@ func (bot *Bot) handleGameStartMessage(s *discordgo.Session, m *discordgo.Messag
 
 	bot.RedisInterface.SetDiscordGameState(dgs, lock)
 
-	// log.Println("Added self game state message")
+	log.Println("Added self game state message")
+	// TODO well this is a little ugly
 	// +12 emojis, 1 for X
 	metrics.RecordDiscordRequests(bot.RedisInterface.client, metrics.ReactionAdd, 13)
 
