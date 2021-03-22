@@ -1,0 +1,126 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>amongusdiscord2</Name>
+  <Repository>killerbad21/amongusdiscord2</Repository>
+  <Registry>https://hub.docker.com/r/killerbad21/amongusdiscord2/</Registry>
+  <Network>host</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://hub.docker.com/r/killerbad21/amongusdiscord2/</Support>
+  <Project>https://github.com/killerbad/amongusdiscord2</Project>
+  <Overview>Discord Bot For Amongus Edit By Mr_sun21&#xD;
+&#xD;
+Works in conjunction with amonguscapture&#xD;
+&#xD;
+For this to work you will need postgres as well as killerbad21/galactus and redis&#xD;
+&#xD;
+Have any questions, concerns, bug reports, or just want to chat? Join the discord at https://discord.gg/ZkqZSWF!&#xD;
+&#xD;
+unRAID template by Argash</Overview>
+  <Category>GameServers: Tools: Other: Network:Voip Network:Messenger</Category>
+  <WebUI/>
+  <TemplateURL/>
+  <Icon>https://github.com/denverquane/amongusdiscord/raw/master/assets/botProfilePicture.jpg</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled>1608044825</DateInstalled>
+  <DonateText/>
+  <DonateLink>patreon.com/automuteus</DonateLink>
+  <Description>Discord Bot For Amongus Edit By Mr_sun21&#xD;
+&#xD;
+Works in conjunction with amonguscapture&#xD;
+&#xD;
+This program is in Beta. While we are confident about the basic functionality, there will still be issues or pecularities with how the program functions! We are actively working to resolve these issues!&#xD;
+&#xD;
+Have any questions, concerns, bug reports, or just want to chat? Join the discord at https://discord.gg/ZkqZSWF!&#xD;
+&#xD;
+unRAID template by Argash</Description>
+  <Networking>
+    <Mode>host</Mode>
+    <Publish/>
+  </Networking>
+  <Data/>
+  <Environment>
+    <Variable>
+      <Value></Value>
+      <Name>DISCORD_BOT_TOKEN</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value/>
+      <Name>GALACTUS_HOST</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value/>
+      <Name>GALACTUS_EXTERNAL_PORT</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>postgres</Value>
+      <Name>POSTGRES_USER</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>postgres</Value>
+      <Name>POSTGRES_PASS</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>8123</Value>
+      <Name>BROKER_PORT</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>5858</Value>
+      <Name>GALACTUS_PORT</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>10.1.14.5:6379</Value>
+      <Name>GALACTUS_REDIS_ADDR</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>10.1.14.5:6379</Value>
+      <Name>REDIS_ADDR</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>http://10.1.14.5:5858</Value>
+      <Name>GALACTUS_ADDR</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>10.1.14.5:5432</Value>
+      <Name>POSTGRES_ADDR</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>http://10.1.14.5:8123/</Value>
+      <Name>HOST</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value></Value>
+      <Name>WORKER_BOT_TOKENS</Name>
+      <Mode/>
+    </Variable>
+  </Environment>
+  <Labels/>
+  <Config Name="DISCORD_BOT_TOKEN" Target="DISCORD_BOT_TOKEN" Default="" Mode="" Description="The Bot Token used by the bot to authenticate with Discord." Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  <Config Name="GALACTUS_HOST" Target="GALACTUS_HOST" Default="" Mode="" Description="Container Variable: GALACTUS_HOST" Type="Variable" Display="always" Required="false" Mask="true"/>
+  <Config Name="GALACTUS_EXTERNAL_PORT" Target="GALACTUS_EXTERNAL_PORT" Default="" Mode="" Description="Container Variable: GALACTUS_EXTERNAL_PORT" Type="Variable" Display="always" Required="false" Mask="false"/>
+  <Config Name="POSTGRES_USER" Target="POSTGRES_USER" Default="" Mode="" Description="Username for authentication with Postgres." Type="Variable" Display="always" Required="false" Mask="false">postgres</Config>
+  <Config Name="POSTGRES_PASS" Target="POSTGRES_PASS" Default="" Mode="" Description="Password for authentication with Postgres." Type="Variable" Display="always" Required="false" Mask="true">postgres</Config>
+  <Config Name="BROKER_PORT" Target="BROKER_PORT" Default="8123" Mode="" Description="Container Variable: BROKER_PORT" Type="Variable" Display="always" Required="false" Mask="false">8123</Config>
+  <Config Name="GALACTUS_PORT" Target="GALACTUS_PORT" Default="5858" Mode="" Description="Address at which Galactus is accessible. Typically something like http://localhost:5858" Type="Variable" Display="always" Required="false" Mask="false">5858</Config>
+  <Config Name="GALACTUS_REDIS_ADDR" Target="GALACTUS_REDIS_ADDR" Default="" Mode="" Description="Container Variable: GALACTUS_REDIS_ADDR" Type="Variable" Display="always" Required="false" Mask="false">10.1.14.5:6379</Config>
+  <Config Name="REDIS_ADDR" Target="REDIS_ADDR" Default="" Mode="" Description="The host and port at which your Redis database instance is accessible. Ex: 192.168.1.42:6379" Type="Variable" Display="always" Required="false" Mask="false">10.1.14.5:6379</Config>
+  <Config Name="GALACTUS_ADDR" Target="GALACTUS_ADDR" Default="" Mode="" Description="Container Variable: GALACTUS_ADDR" Type="Variable" Display="always" Required="false" Mask="false">http://10.1.14.5:5858</Config>
+  <Config Name="POSTGRES_ADDR" Target="POSTGRES_ADDR" Default="" Mode="" Description="Address (host:port) at which Postgres is accessible. Used by automuteus to store game statistics." Type="Variable" Display="always" Required="false" Mask="false">10.1.14.5:5432</Config>
+  <Config Name="HOST" Target="HOST" Default="" Mode="" Description="The externally-accessible URL for Galactus. For example, http://test.com:8123. This is used to provide the linking URI to the capture, via the Direct Message the bot sends you when typing .au new. You must specify http:// or https:// accordingly, and specify the port if non-8123. For example, https://your-app.herokuapp.com:443" Type="Variable" Display="always" Required="false" Mask="false">http://10.1.14.5:8123/</Config>
+  <Config Name="Worker Bot" Target="WORKER_BOT_TOKENS" Default="" Mode="" Description="A comma-separated list of extra tokens to be used for mute/deafen. (Sent to Galactus, and stored in Redis after first start-up)" Type="Variable" Display="always" Required="false" Mask="true"></Config>
+</Container>
