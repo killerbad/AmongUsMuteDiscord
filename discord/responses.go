@@ -9,6 +9,7 @@ import (
 	"github.com/automuteus/utils/pkg/premium"
 	"github.com/automuteus/utils/pkg/rediskey"
 	"github.com/denverquane/amongusdiscord/discord/command"
+	"github.com/denverquane/amongusdiscord/discord/setting"
 	"log"
 	"strings"
 	"time"
@@ -80,7 +81,7 @@ func helpResponse(isAdmin, isPermissioned bool, commandPrefix string, commands [
 	return embed
 }
 
-func settingResponse(commandPrefix string, settings []Setting, sett *storage.GuildSettings, prem bool) *discordgo.MessageEmbed {
+func settingResponse(commandPrefix string, settings []setting.Setting, sett *storage.GuildSettings, prem bool) *discordgo.MessageEmbed {
 	embed := discordgo.MessageEmbed{
 		URL:  "",
 		Type: "",
@@ -106,14 +107,46 @@ func settingResponse(commandPrefix string, settings []Setting, sett *storage.Gui
 
 	fields := make([]*discordgo.MessageEmbedField, 0)
 	for _, v := range settings {
-		if !v.premium || v.premium == prem {
-			name := v.name
-			if v.premium {
-				name = "💎 " + name
-			}
+		if !v.Premium {
+			name := v.Name
 			fields = append(fields, &discordgo.MessageEmbedField{
 				Name:   name,
-				Value:  sett.LocalizeMessage(v.shortDesc),
+				Value:  sett.LocalizeMessage(v.ShortDesc),
+				Inline: true,
+			})
+		}
+	}
+	var desc string
+	if prem {
+		desc = sett.LocalizeMessage(&i18n.Message{
+			ID:    "responses.settingResponse.PremiumThanks",
+			Other: "Thanks for being an AutoMuteUs Premium user!",
+		})
+	} else {
+		desc = sett.LocalizeMessage(&i18n.Message{
+			ID:    "responses.settingResponse.PremiumNoThanks",
+			Other: "The following settings are only for AutoMuteUs premium users.\nType `{{.CommandPrefix}} premium` to learn more!",
+		},
+			map[string]interface{}{
+				"CommandPrefix": commandPrefix,
+			})
+	}
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Name:   "\u200B",
+		Value:  "\u200B",
+		Inline: false,
+	})
+	fields = append(fields, &discordgo.MessageEmbedField{
+		Name:   "💎 Premium Settings 💎",
+		Value:  desc,
+		Inline: false,
+	})
+	for _, v := range settings {
+		if v.Premium {
+			name := v.Name
+			fields = append(fields, &discordgo.MessageEmbedField{
+				Name:   name,
+				Value:  sett.LocalizeMessage(v.ShortDesc),
 				Inline: true,
 			})
 		}
@@ -125,6 +158,9 @@ func settingResponse(commandPrefix string, settings []Setting, sett *storage.Gui
 
 func (bot *Bot) infoResponse(guildID string, sett *storage.GuildSettings) *discordgo.MessageEmbed {
 	version, commit := rediskey.GetVersionAndCommit(context.Background(), bot.RedisInterface.client)
+	if strings.HasPrefix(version, "6.9") {
+		version = "😎 " + version + " 😎"
+	}
 	embed := discordgo.MessageEmbed{
 		URL:  "",
 		Type: "",
@@ -459,6 +495,54 @@ func lobbyMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.GuildSet
 	return &msg
 }
 
+func gameOverMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.GuildSettings, winners string) *discordgo.MessageEmbed {
+	_, _, playMap := dgs.AmongUsData.GetRoomRegionMap()
+
+	listResp := dgs.ToEmojiEmbedFields(emojis, sett)
+
+	desc := sett.LocalizeMessage(&i18n.Message{
+		ID:    "eventHandler.gameOver.matchID",
+		Other: "Game Over! View the match's stats using Match ID: `{{.MatchID}}`\n{{.Winners}}",
+	},
+		map[string]interface{}{
+			"MatchID": matchIDCode(dgs.ConnectCode, dgs.MatchID),
+			"Winners": winners,
+		})
+
+	var footer *discordgo.MessageEmbedFooter
+
+	if sett.DeleteGameSummaryMinutes > 0 {
+		footer = &discordgo.MessageEmbedFooter{
+			Text: sett.LocalizeMessage(&i18n.Message{
+				ID:    "eventHandler.gameOver.deleteMessageFooter",
+				Other: "Deleting message {{.Mins}} mins from:",
+			},
+				map[string]interface{}{
+					"Mins": sett.DeleteGameSummaryMinutes,
+				}),
+			IconURL:      "",
+			ProxyIconURL: "",
+		}
+	}
+
+	msg := discordgo.MessageEmbed{
+		URL:         "",
+		Type:        "",
+		Title:       sett.LocalizeMessage(amongus.ToLocale(game.GAMEOVER)),
+		Description: desc,
+		Timestamp:   time.Now().Format(ISO8601),
+		Footer:      footer,
+		Color:       12745742, // DARK GOLD
+		Image:       nil,
+		Thumbnail:   getThumbnailFromMap(playMap, sett),
+		Video:       nil,
+		Provider:    nil,
+		Author:      nil,
+		Fields:      listResp,
+	}
+	return &msg
+}
+
 func getThumbnailFromMap(playMap game.PlayMap, sett *storage.GuildSettings) *discordgo.MessageEmbedThumbnail {
 	var thumbNail *discordgo.MessageEmbedThumbnail = nil
 	if playMap != game.EMPTYMAP {
@@ -487,11 +571,9 @@ func gamePlayMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.Guild
 	listResp := dgs.ToEmojiEmbedFields(emojis, sett)
 	desc := ""
 
-	if phase != game.GAMEOVER {
-		desc = dgs.makeDescription(sett)
-		gameInfoFields := lobbyMetaEmbedFields("", "", dgs.GameStateMsg.LeaderID, dgs.Tracking.ChannelName, dgs.AmongUsData.GetNumDetectedPlayers(), dgs.GetCountLinked(), sett)
-		listResp = append(gameInfoFields, listResp...)
-	}
+	desc = dgs.makeDescription(sett)
+	gameInfoFields := lobbyMetaEmbedFields("", "", dgs.GameStateMsg.LeaderID, dgs.Tracking.ChannelName, dgs.AmongUsData.GetNumDetectedPlayers(), dgs.GetCountLinked(), sett)
+	listResp = append(gameInfoFields, listResp...)
 
 	var color int
 	switch phase {
@@ -499,8 +581,6 @@ func gamePlayMessage(dgs *GameState, emojis AlivenessEmojis, sett *storage.Guild
 		color = 3447003 // BLUE
 	case game.DISCUSS:
 		color = 10181046 // PURPLE
-	case game.GAMEOVER:
-		color = 12745742 // DARK GOLD
 	default:
 		color = 15158332 // RED
 	}
@@ -701,7 +781,7 @@ func nonPremiumSettingResponse(sett *storage.GuildSettings) string {
 var BotInvites = []string{
 	"https://discord.com/api/oauth2/authorize?client_id=780323275624546304&permissions=12582912&scope=bot",
 	"https://discord.com/api/oauth2/authorize?client_id=769022114229125181&permissions=12582912&scope=bot",
-	"https://discord.com/api/oauth2/authorize?client_id=780323801173983262&permissions=25165824&scope=bot"}
+	"https://discord.com/api/oauth2/authorize?client_id=780323801173983262&permissions=12582912&scope=bot"}
 
 func premiumInvitesEmbed(tier premium.Tier, sett *storage.GuildSettings) *discordgo.MessageEmbed {
 	desc := ""

@@ -2,11 +2,15 @@ package storage
 
 import (
 	"github.com/automuteus/utils/pkg/game"
+	"os"
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/denverquane/amongusdiscord/locale"
 )
+
+const DefaultLeaderboardSize = 3
+const DefaultLeaderboardMin = 3
 
 type GuildSettings struct {
 	AdminUserIDs             []string        `json:"adminIDs"`
@@ -18,13 +22,22 @@ type GuildSettings struct {
 	Delays                   game.GameDelays `json:"delays"`
 	DeleteGameSummaryMinutes int             `json:"deleteGameSummary"`
 	lock                     sync.RWMutex
-	UnmuteDeadDuringTasks    bool `json:"unmuteDeadDuringTasks"`
-	AutoRefresh              bool `json:"autoRefresh"`
+	UnmuteDeadDuringTasks    bool   `json:"unmuteDeadDuringTasks"`
+	AutoRefresh              bool   `json:"autoRefresh"`
+	MatchSummaryChannelID    string `json:"matchSummaryChannelID"`
+	LeaderboardMention       bool   `json:"leaderboardMention"`
+	LeaderboardSize          int    `json:"leaderboardSize"`
+	LeaderboardMin           int    `json:"leaderboardMin"`
+	MuteSpectator            bool   `json:"muteSpectator"`
 }
 
 func MakeGuildSettings() *GuildSettings {
+	prefix := os.Getenv("AUTOMUTEUS_GLOBAL_PREFIX")
+	if prefix == "" {
+		prefix = ".au"
+	}
 	return &GuildSettings{
-		CommandPrefix:            ".au",
+		CommandPrefix:            prefix,
 		Language:                 locale.DefaultLang,
 		AdminUserIDs:             []string{},
 		PermissionRoleIDs:        []string{},
@@ -34,6 +47,11 @@ func MakeGuildSettings() *GuildSettings {
 		DeleteGameSummaryMinutes: 0, //-1 for never delete the match summary
 		AutoRefresh:              false,
 		MapVersion:               "simple",
+		MatchSummaryChannelID:    "",
+		LeaderboardMention:       true,
+		LeaderboardSize:          3,
+		LeaderboardMin:           3,
+		MuteSpectator:            false,
 		lock:                     sync.RWMutex{},
 	}
 }
@@ -103,12 +121,58 @@ func (gs *GuildSettings) SetDeleteGameSummaryMinutes(num int) {
 	gs.DeleteGameSummaryMinutes = num
 }
 
+func (gs *GuildSettings) SetMatchSummaryChannelID(id string) {
+	gs.MatchSummaryChannelID = id
+}
+
+func (gs *GuildSettings) GetMatchSummaryChannelID() string {
+	return gs.MatchSummaryChannelID
+}
+
 func (gs *GuildSettings) GetAutoRefresh() bool {
 	return gs.AutoRefresh
 }
 
 func (gs *GuildSettings) SetAutoRefresh(n bool) {
 	gs.AutoRefresh = n
+}
+
+func (gs *GuildSettings) GetLeaderboardMention() bool {
+	return gs.LeaderboardMention
+}
+
+func (gs *GuildSettings) SetLeaderboardMention(v bool) {
+	gs.LeaderboardMention = v
+}
+
+func (gs *GuildSettings) GetLeaderboardSize() int {
+	if gs.LeaderboardSize < 1 {
+		return DefaultLeaderboardSize
+	}
+	return gs.LeaderboardSize
+}
+
+func (gs *GuildSettings) SetLeaderboardSize(v int) {
+	gs.LeaderboardSize = v
+}
+
+func (gs *GuildSettings) GetLeaderboardMin() int {
+	if gs.LeaderboardMin < 1 {
+		return DefaultLeaderboardMin
+	}
+	return gs.LeaderboardMin
+}
+
+func (gs *GuildSettings) SetLeaderboardMin(v int) {
+	gs.LeaderboardMin = v
+}
+
+func (gs *GuildSettings) GetMuteSpectator() bool {
+	return gs.MuteSpectator
+}
+
+func (gs *GuildSettings) SetMuteSpectator(behavior bool) {
+	gs.MuteSpectator = behavior
 }
 
 func (gs *GuildSettings) GetMapVersion() string {
